@@ -35,4 +35,4 @@ function validateReading({ date, slot, value }, today = todayString()) {
   return null;
 }
 
-module.exports = { SLOTS, todayString, validateReading };
+module.exports = { SLOTS, todayString, isRealDate, validateReading };
