@@ -1,5 +1,5 @@
 const pool = require('../db');
-const { SLOTS, validateReading } = require('../services/readingValidation');
+const { SLOTS, validateReading, isRealDate } = require('../services/readingValidation');
 
 const COLUMNS = `id, to_char(reading_date, 'YYYY-MM-DD') AS date, slot, value`;
 
@@ -31,6 +31,10 @@ function parseId(req) {
 // GET /readings  (optional ?date=YYYY-MM-DD)
 async function list(req, res) {
   try {
+    if (req.query.date && !isRealDate(req.query.date)) {
+      return res.status(400).json({ error: 'Please choose a valid date.' });
+    }
+
     const params = [req.userId];
     let where = 'user_id = $1';
     if (req.query.date) {

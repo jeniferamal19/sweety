@@ -25,10 +25,13 @@ function validateReading({ date, slot, value }, today = todayString()) {
   if (value === undefined || value === null || String(value).trim() === '') {
     return 'Please enter a glucose value.';
   }
+
+  // Digits only: rejects 120.5, -5, abc, 1e2 and 0x50
   const n = Number(value);
-  if (!Number.isInteger(n) || n < 40 || n > 600) {
+  if (!/^\d+$/.test(String(value).trim()) || n < 40 || n > 600) {
     return 'Value must be between 40 and 600 mg/dl.';
   }
+
   if (!Object.hasOwn(SLOTS, slot)) return 'Please choose a time slot.';
   if (!isRealDate(date)) return 'Please choose a valid date.';
   if (date > today) return 'Date cannot be in the future.';
