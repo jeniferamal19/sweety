@@ -74,16 +74,17 @@ export default function Dashboard() {
           onSaved={handleSaved}
           onCancel={() => setEditing(null)}
         />
-        <ReadingsList
-          id="reading-history"
-          readings={readings}
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          onPageChange={setPage}
-          onEdit={setEditing}
-          onDelete={handleDelete}
-        />
+        <div id="reading-history" className="readings-list-wrap">
+          <ReadingsList
+            readings={readings}
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            onPageChange={setPage}
+            onEdit={setEditing}
+            onDelete={handleDelete}
+          />
+        </div>
       </section>
       <section id="reports" className="reports-section" aria-label="Glucose reports">
         <div className="section-intro">

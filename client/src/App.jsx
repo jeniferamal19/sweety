@@ -26,6 +26,14 @@ export default function App() {
         />
       )}
       <aside className={`sidebar${navigationOpen ? ' sidebar-open' : ''}`} aria-label="Main navigation">
+        <button
+          type="button"
+          className="sidebar-close"
+          aria-label="Close navigation"
+          onClick={() => setNavigationOpen(false)}
+        >
+          Close
+        </button>
         <a className="brand" href="#dashboard" onClick={() => setNavigationOpen(false)}>
           <span className="brand-mark" aria-hidden="true">S</span>
           <span>
@@ -64,7 +72,7 @@ export default function App() {
           <button
             type="button"
             className="menu-toggle"
-            aria-label="Open navigation"
+            aria-label={navigationOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={navigationOpen}
             onClick={() => setNavigationOpen((open) => !open)}
           >

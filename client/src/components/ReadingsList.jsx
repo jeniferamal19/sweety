@@ -1,8 +1,8 @@
 import { slotLabel } from '../constants';
 
-export default function ReadingsList({ id, readings, page, totalPages, total, onPageChange, onEdit, onDelete }) {
+export default function ReadingsList({ readings, page, totalPages, total, onPageChange, onEdit, onDelete }) {
   return (
-    <div className="card readings-card" id={id}>
+    <div className="card readings-card">
       <div className="card-heading">
         <div>
           <span className="eyebrow">RECENT ACTIVITY</span>
