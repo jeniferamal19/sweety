@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { todayString } from '../constants';
-
+import MonthChart from './MonthChart';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function formatDate(s) {
@@ -98,6 +98,7 @@ export default function ReportsPanel({ refreshKey }) {
           </ReportCard>
           <ReportCard title="Month-to-date report" report={reports.monthToDate} />
           <ReportCard title="Previous month report" report={reports.previousMonth} />
+                    <MonthChart date={date} refreshKey={refreshKey} />
         </>
       )}
     </>

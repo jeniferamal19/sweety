@@ -60,5 +60,27 @@ async function getReports(req, res) {
     res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 }
+// GET /reports/month?date=YYYY-MM-DD
+// Readings from the 1st of the month up to the date, for the chart
+async function getMonthReadings(req, res) {
+  try {
+    const date = req.query.date || todayString();
+    if (!isRealDate(date)) return res.status(400).json({ error: 'Please choose a valid date.' });
+    if (date > todayString()) return res.status(400).json({ error: 'Date cannot be in the future.' });
 
-module.exports = { getReports };
+    const { monthToDate } = getRanges(date);
+    const result = await pool.query(
+      `SELECT to_char(reading_date, 'YYYY-MM-DD') AS date, slot, value
+       FROM readings
+       WHERE user_id = $1 AND reading_date BETWEEN $2 AND $3
+       ORDER BY reading_date, id`,
+      [req.userId, monthToDate.from, monthToDate.to]
+    );
+    res.json({ from: monthToDate.from, to: monthToDate.to, readings: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+}
+
+module.exports = { getReports, getMonthReadings };
