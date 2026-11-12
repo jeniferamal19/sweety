@@ -29,29 +29,48 @@ function parseId(req) {
 }
 
 // GET /readings  (optional ?date=YYYY-MM-DD)
+// GET /readings  (optional ?date=YYYY-MM-DD, ?page=1, ?limit=20)
 async function list(req, res) {
   try {
     if (req.query.date && !isRealDate(req.query.date)) {
       return res.status(400).json({ error: 'Please choose a valid date.' });
     }
 
+    const page = req.query.page === undefined ? 1 : Number(req.query.page);
+    const limit = req.query.limit === undefined ? 20 : Number(req.query.limit);
+    if (!Number.isInteger(page) || page < 1) {
+      return res.status(400).json({ error: 'Page must be a whole number, 1 or more.' });
+    }
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      return res.status(400).json({ error: 'Limit must be a whole number between 1 and 100.' });
+    }
+
     const params = [req.userId];
     let where = 'user_id = $1';
     if (req.query.date) {
       params.push(req.query.date);
-      where += ' AND reading_date = $2';
+      where += ` AND reading_date = $${params.length}`;
     }
-    const result = await pool.query(
-      `SELECT ${COLUMNS} FROM readings WHERE ${where} ORDER BY reading_date DESC, id`,
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM readings WHERE ${where}`,
       params
     );
-    res.json({ readings: result.rows });
+    const total = countResult.rows[0].total;
+
+    const result = await pool.query(
+      `SELECT ${COLUMNS} FROM readings WHERE ${where}
+       ORDER BY reading_date DESC, id
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit, (page - 1) * limit]
+    );
+
+    res.json({ readings: result.rows, page, limit, total, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 }
-
 // POST /readings
 async function create(req, res) {
   try {

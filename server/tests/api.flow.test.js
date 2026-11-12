@@ -75,3 +75,18 @@ test("user B cannot see, edit or delete user A's readings", async () => {
     .set('Authorization', `Bearer ${tokenB}`).send({ date: DATE, slot: 'morning', value: 99 });
   expect(edit.status).toBe(404);
 });
+test('pagination returns pages and rejects bad values', async () => {
+  const auth = { Authorization: `Bearer ${tokenA}` };
+
+  const p1 = await request(app).get('/readings?page=1&limit=3').set(auth);
+  expect(p1.status).toBe(200);
+  expect(p1.body.readings).toHaveLength(3);
+  expect(p1.body.total).toBe(4);
+  expect(p1.body.totalPages).toBe(2);
+
+  const p2 = await request(app).get('/readings?page=2&limit=3').set(auth);
+  expect(p2.body.readings).toHaveLength(1);
+
+  const bad = await request(app).get('/readings?limit=0').set(auth);
+  expect(bad.status).toBe(400);
+});

@@ -36,7 +36,7 @@ async function request(path, { method = 'GET', body } = {}) {
 export const api = {
   register: (body) => request('/auth/register', { method: 'POST', body }),
   login: (body) => request('/auth/login', { method: 'POST', body }),
-  listReadings: () => request('/readings'),
+    listReadings: (page = 1, limit = 10) => request(`/readings?page=${page}&limit=${limit}`),
   addReading: (body) => request('/readings', { method: 'POST', body }),
   updateReading: (id, body) => request(`/readings/${id}`, { method: 'PUT', body }),
   deleteReading: (id) => request(`/readings/${id}`, { method: 'DELETE' }),
