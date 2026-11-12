@@ -41,5 +41,7 @@ export const api = {
   updateReading: (id, body) => request(`/readings/${id}`, { method: 'PUT', body }),
   deleteReading: (id) => request(`/readings/${id}`, { method: 'DELETE' }),
   getReports: (date) => request(`/reports?date=${date}`),
-    getMonthReadings: (date) => request(`/reports/month?date=${date}`),
+  getMonthReadings: (date) => request(`/reports/month?date=${date}`),
+  listPatients: () => request('/doctor/patients'),
+  getPatientReports: (id, date) => request(`/doctor/patients/${id}/reports?date=${date}`),
 };

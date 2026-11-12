@@ -47,15 +47,15 @@ function ReportCard({ title, report, children }) {
   );
 }
 
-export default function ReportsPanel({ refreshKey }) {
+export default function ReportsPanel({ refreshKey, patientId }) {
   const [date, setDate] = useState(todayString());
   const [reports, setReports] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
-    api
-      .getReports(date)
+       const request = patientId ? api.getPatientReports(patientId, date) : api.getReports(date);
+    request
       .then((data) => {
         if (!cancelled) {
           setReports(data);
@@ -68,7 +68,7 @@ export default function ReportsPanel({ refreshKey }) {
     return () => {
       cancelled = true;
     };
-  }, [date, refreshKey]);
+   }, [date, refreshKey, patientId]);
 
   return (
     <>
@@ -98,7 +98,7 @@ export default function ReportsPanel({ refreshKey }) {
           </ReportCard>
           <ReportCard title="Month-to-date report" report={reports.monthToDate} />
           <ReportCard title="Previous month report" report={reports.previousMonth} />
-                    <MonthChart date={date} refreshKey={refreshKey} />
+                    {!patientId && <MonthChart date={date} refreshKey={refreshKey} />}          
         </>
       )}
     </>
