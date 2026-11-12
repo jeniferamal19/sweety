@@ -30,12 +30,27 @@ export default function AuthPage({ onLogin }) {
   const isRegister = mode === 'register';
 
   return (
-    <div className="container" style={{ maxWidth: 420 }}>
-      <h1>Sweety</h1>
-      <p>Track your blood glucose, one reading at a time.</p>
+    <div className="auth-shell">
+      <div className="brand auth-brand">
+        <span className="brand-mark" aria-hidden="true">S</span>
+        <span>
+          <strong>Sweety</strong>
+          <small>Glucose care</small>
+        </span>
+      </div>
+      <div className="auth-intro">
+        <span className="eyebrow">A LITTLE MORE CLARITY</span>
+        <h1>Care starts with knowing.</h1>
+        <p>Track your blood glucose, one reading at a time.</p>
+      </div>
 
       <form className="card" onSubmit={handleSubmit}>
-        <h2>{isRegister ? 'Create account' : 'Log in'}</h2>
+        <div className="card-heading">
+          <div>
+            <span className="eyebrow">WELCOME TO SWEETY</span>
+            <h2>{isRegister ? 'Create account' : 'Log in'}</h2>
+          </div>
+        </div>
 
         {isRegister && (
           <>

@@ -29,8 +29,14 @@ export default function ReadingForm({ reading, onSaved, onCancel }) {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit} noValidate>
-      <h2>{editing ? 'Edit reading' : 'Add a reading'}</h2>
+    <form className="card reading-form" onSubmit={handleSubmit} noValidate>
+      <div className="card-heading">
+        <div>
+          <span className="eyebrow">GLUCOSE TRACKING</span>
+          <h2>{editing ? 'Edit reading' : 'Add a reading'}</h2>
+        </div>
+        <span className="card-heading-icon" aria-hidden="true">+</span>
+      </div>
 
       <label htmlFor="date">Date</label>
       <input id="date" type="date" max={todayString()} value={date} onChange={(e) => setDate(e.target.value)} />
@@ -47,7 +53,7 @@ export default function ReadingForm({ reading, onSaved, onCancel }) {
 
       {error && <div className="error">{error}</div>}
 
-      <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+      <div className="form-actions">
         <button type="submit" disabled={loading}>
           {loading ? 'Saving...' : editing ? 'Save changes' : 'Add reading'}
         </button>

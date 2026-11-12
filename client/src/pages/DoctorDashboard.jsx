@@ -20,9 +20,21 @@ export default function DoctorDashboard() {
   const selected = patients && patients.find((p) => p.id === selectedId);
 
   return (
-    <>
+    <div className="dashboard-content" id="dashboard">
+      <header className="page-intro">
+        <div>
+          <span className="eyebrow">CARE WORKSPACE</span>
+          <h1>Patient overview</h1>
+          <p>Review reports for patients assigned to your care.</p>
+        </div>
+      </header>
       <div className="card">
-        <h2>Your patients</h2>
+        <div className="card-heading">
+          <div>
+            <span className="eyebrow">PATIENTS</span>
+            <h2>Your patients</h2>
+          </div>
+        </div>
         {error && <div className="error">{error}</div>}
         {patients && patients.length === 0 && (
           <p className="empty">No patients are assigned to you yet.</p>
@@ -46,12 +58,17 @@ export default function DoctorDashboard() {
       </div>
 
       {selected && (
-        <>
-          <h2>Reports for {selected.name}</h2>
+        <section id="reports" className="reports-section">
+          <div className="section-intro">
+            <div>
+              <span className="eyebrow">PATIENT REPORTS</span>
+              <h2>Reports for {selected.name}</h2>
+            </div>
+          </div>
           {/* key makes the reports reset when you switch patient */}
           <ReportsPanel key={selected.id} patientId={selected.id} refreshKey={0} />
-        </>
+        </section>
       )}
-    </>
+    </div>
   );
 }

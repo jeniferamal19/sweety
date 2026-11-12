@@ -18,23 +18,34 @@ function formatRange(from, to) {
 
 function Stat({ label, value }) {
   return (
-    <div>
-      <div style={{ color: '#64748b', fontSize: 14 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 700 }}>{value}</div>
+    <div className="report-stat">
+      <div className="report-stat-label">{label}</div>
+      <div className="report-stat-value">{value}</div>
     </div>
   );
 }
 
 function ReportCard({ title, report, children }) {
   return (
-    <div className="card">
-      <h3>{title}</h3>
-      <p style={{ color: '#64748b', marginTop: -8 }}>{formatRange(report.from, report.to)}</p>
+    <div className={`card report-card${title === 'Daily report' ? ' daily-report-card' : ''}`}>
+      <div className="card-heading">
+        <div>
+          <span className="eyebrow">GLUCOSE SUMMARY</span>
+          <h3>{title}</h3>
+        </div>
+        <span className="report-period">{formatRange(report.from, report.to)}</span>
+      </div>
       {report.count === 0 ? (
         <p className="empty">No readings for this period yet.</p>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 12 }}>
+          {title === 'Daily report' && (
+            <div className="average-indicator" aria-label={`Daily average ${report.average} milligrams per deciliter`}>
+              <span>{report.average}</span>
+              <small>mg/dl</small>
+            </div>
+          )}
+          <div className="report-stats">
             <Stat label="Highest" value={report.highest} />
             <Stat label="Lowest" value={report.lowest} />
             <Stat label="Average" value={report.average.toFixed(1)} />
@@ -72,8 +83,13 @@ export default function ReportsPanel({ refreshKey, patientId }) {
 
   return (
     <>
-      <div className="card">
-        <h2>Reports</h2>
+      <div className="card report-date-card">
+        <div className="card-heading">
+          <div>
+            <span className="eyebrow">REPORT PERIOD</span>
+            <h2>Choose a date</h2>
+          </div>
+        </div>
         <label htmlFor="report-date">Select a date</label>
         <input
           id="report-date"
@@ -88,7 +104,7 @@ export default function ReportsPanel({ refreshKey, patientId }) {
       {reports && (
         <>
           <ReportCard title="Daily report" report={reports.daily}>
-            <ul style={{ paddingLeft: 18, marginBottom: 0 }}>
+            <ul className="daily-reading-list">
               {reports.daily.readings.map((r) => (
                 <li key={r.id}>
                   {r.slotLabel}: <strong>{r.value}</strong> mg/dl
@@ -98,7 +114,7 @@ export default function ReportsPanel({ refreshKey, patientId }) {
           </ReportCard>
           <ReportCard title="Month-to-date report" report={reports.monthToDate} />
           <ReportCard title="Previous month report" report={reports.previousMonth} />
-                    {!patientId && <MonthChart date={date} refreshKey={refreshKey} />}          
+          {!patientId && <MonthChart date={date} refreshKey={refreshKey} />}
         </>
       )}
     </>

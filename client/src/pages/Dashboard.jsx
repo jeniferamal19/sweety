@@ -57,24 +57,44 @@ export default function Dashboard() {
   }
 
   return (
-    <>
+    <div className="dashboard-content" id="dashboard">
+      <header className="page-intro">
+        <div>
+          <span className="eyebrow">YOUR HEALTH OVERVIEW</span>
+          <h1>Your glucose, at a glance</h1>
+          <p>Keep track of your readings and see how they change over time.</p>
+        </div>
+        <a className="text-link" href="#reading-history">View reading history <span aria-hidden="true">→</span></a>
+      </header>
       {error && <div className="error">{error}</div>}
-      <ReadingForm
-        key={editing ? editing.id : 'new'}
-        reading={editing}
-        onSaved={handleSaved}
-        onCancel={() => setEditing(null)}
-      />
-      <ReadingsList
-        readings={readings}
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        onPageChange={setPage}
-        onEdit={setEditing}
-        onDelete={handleDelete}
-      />
-      <ReportsPanel refreshKey={refreshKey} />
-    </>
+      <section className="tracking-grid" aria-label="Glucose readings">
+        <ReadingForm
+          key={editing ? editing.id : 'new'}
+          reading={editing}
+          onSaved={handleSaved}
+          onCancel={() => setEditing(null)}
+        />
+        <ReadingsList
+          id="reading-history"
+          readings={readings}
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          onPageChange={setPage}
+          onEdit={setEditing}
+          onDelete={handleDelete}
+        />
+      </section>
+      <section id="reports" className="reports-section" aria-label="Glucose reports">
+        <div className="section-intro">
+          <div>
+            <span className="eyebrow">TRENDS & INSIGHTS</span>
+            <h2>Your reports</h2>
+          </div>
+          <p>Daily and monthly summaries from your recorded readings.</p>
+        </div>
+        <ReportsPanel refreshKey={refreshKey} />
+      </section>
+    </div>
   );
 }

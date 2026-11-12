@@ -1,12 +1,3 @@
-<!--
-HOW TO USE THIS FILE (these comments are invisible on GitHub):
-1. Each bonus has its own block between "BONUS START" and "BONUS END" comments.
-2. When a bonus WORKS, tick its box in the "Bonus tasks" table (change [ ] to [x]).
-3. If a bonus is NOT finished by the time you send the email, delete its whole block,
-   untick it in the table, and list it under "Bonus tasks not attempted" in the Notes.
-4. Never leave a block in for something that does not work.
--->
-
 # Sweety – Blood Glucose Tracker
 
 Sweety is a small web app where a diabetes patient records up to 4 blood glucose readings a day (in mg/dl) and views daily, month-to-date and previous-month reports.
@@ -35,19 +26,19 @@ Sweety is a small web app where a diabetes patient records up to 4 blood glucose
 
 | Done | Bonus | Where to read more |
 |---|---|---|
-| [ ] | Pagination on `GET /readings` | [Pagination](#bonus-pagination) |
-| [ ] | Chart of readings over the month | [Charts](#bonus-charts) |
-| [ ] | Docker (`docker-compose.yml`) | [Docker](#bonus-docker) |
-| [ ] | Frontend tests (React Testing Library) | [Frontend tests](#bonus-frontend-tests) |
-| [ ] | Redis caching of reports | [Redis caching](#bonus-redis-caching) |
-| [ ] | Background job with BullMQ | [BullMQ job](#bonus-bullmq-reminder-job) |
-| [ ] | Doctor role | [Doctor role](#bonus-doctor-role) |
+| [x] | Pagination on `GET /readings` | [Pagination](#bonus-pagination) |
+| [x] | Chart of readings over the month | [Charts](#bonus-charts) |
+| [x] | Docker (`docker-compose.yml`) | [Docker](#bonus-docker) |
+| [x] | Frontend tests (React Testing Library) | [Frontend tests](#bonus-frontend-tests) |
+| [x] | Doctor role | [Doctor role](#bonus-doctor-role) |
+
+Not attempted: Redis caching and the BullMQ background job.
 
 ## Project structure
 
 ```
 sweety/
-  docker-compose.yml  (bonus: PostgreSQL, Redis and the app)
+  docker-compose.yml  (bonus: PostgreSQL)
   server/             Express API
     controllers/      request handlers (auth, readings, reports)
     routes/           URL routes
@@ -64,7 +55,7 @@ sweety/
 
 - Node.js 18 or newer
 - PostgreSQL 14 or newer
-- (Bonus only) Docker, for the Docker, Redis and BullMQ bonuses
+- (Optional) Docker, to run PostgreSQL in a container
 
 ## 1. Install
 
@@ -85,10 +76,9 @@ Copy the example files and fill in your own values (no real secrets are committe
 
 | Variable | Meaning | Example |
 |---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | `postgres://user:password@localhost:5432/sweety` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgres://sweety:sweety@localhost:5433/sweety` |
 | `JWT_SECRET` | Long random text used to sign login tokens | `change_me` |
 | `PORT` | Port for the API | `5000` |
-| `REDIS_URL` | (Bonus) Redis connection. Leave empty to run without Redis | `redis://localhost:6379` |
 
 **Client** (`client/.env`):
 
@@ -118,14 +108,26 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ## 3. Set up the database
 
-Create the database, then create the tables from the schema file:
+**Option A: Docker (easiest)**
 
 ```bash
-psql -U postgres -c "CREATE DATABASE sweety;"
-psql -U postgres -d sweety -f server/db/schema.sql
+docker compose up -d
 ```
 
-Use the same user, password and database name in `DATABASE_URL`. (If you use the Docker bonus, the database and tables are created for you. See [Docker](#bonus-docker).)
+This starts PostgreSQL 16 on port 5433 (user, password and database are all `sweety`). Use this in `server/.env`:
+
+```
+DATABASE_URL=postgres://sweety:sweety@localhost:5433/sweety
+```
+
+**Option B: local PostgreSQL.** Create a database named `sweety`, and put your own user, password and port in `DATABASE_URL`.
+
+Then create the tables (safe to run more than once):
+
+```bash
+cd server
+npm run migrate
+```
 
 ## 4. Seed demo data
 
@@ -138,6 +140,8 @@ This creates a demo user with about six weeks of sample readings, so all three r
 
 - Email: `demo@example.com`
 - Password: `password123`
+
+It also creates a demo doctor (`doctor@example.com` / `password123`) who is assigned to the demo patient.
 
 Running it again resets the demo user's readings (no duplicates).
 
@@ -172,6 +176,7 @@ What is tested:
 
 - **Validation rules:** the value, slot and date checks and their exact error messages
 - **Report date ranges:** month-to-date and previous month, including January and leap years
+- **Pagination and doctor role:** page/limit checks, and a doctor sees only assigned patients
 - **API flow (Supertest):** passwords are stored hashed, wrong login is rejected, readings need a login, duplicate slot and 4-per-day errors, and user B cannot see, edit or delete user A's readings
 
 The API flow test uses the real database from `DATABASE_URL`, so PostgreSQL must be running and the schema must exist. It creates two throwaway users and deletes them when it finishes.
@@ -222,28 +227,15 @@ The dashboard shows a line chart (Recharts) of the selected month's readings. Th
 <!-- BONUS START: docker -->
 ## Bonus: Docker
 
-`docker-compose.yml` starts everything the app needs with one command.
-
-Start only the infrastructure (PostgreSQL and Redis), then run the server and client normally:
+`docker-compose.yml` starts PostgreSQL 16 (user, password and database are all `sweety`) on port 5433.
 
 ```bash
-docker compose up -d db redis
+docker compose up -d       # start
+docker compose down        # stop
+docker compose down -v     # stop and delete the data
 ```
 
-The `db` container creates the `sweety` database and loads `server/db/schema.sql` on its first start. Use this in `server/.env`:
-
-```
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/sweety
-REDIS_URL=redis://localhost:6379
-```
-
-Or start everything, including the API, in containers:
-
-```bash
-docker compose up --build
-```
-
-Stop with `docker compose down`. Add `-v` to also delete the database volume and start from scratch.
+Then run `npm run migrate` and `npm run seed` in the `server` folder.
 <!-- BONUS END: docker -->
 
 <!-- BONUS START: frontend-tests -->
@@ -258,33 +250,6 @@ npm test
 
 The tests check that the form renders its fields, that the server's error messages (for example "Please enter a glucose value.") are shown on screen, and that a successful save clears the field and tells the page to refresh.
 <!-- BONUS END: frontend-tests -->
-
-<!-- BONUS START: redis -->
-## Bonus: Redis caching
-
-Report results are cached in Redis, so repeated requests for the same date skip the database.
-
-- Cache key: `reports:<userId>:<date>`, with a one-hour expiry as a safety net.
-- Whenever a reading is added, edited or deleted, that user's cached reports are deleted, so they never show stale numbers.
-- Redis is optional. If `REDIS_URL` is empty or Redis is down, the app logs a warning and reads from PostgreSQL as usual.
-<!-- BONUS END: redis -->
-
-<!-- BONUS START: bullmq -->
-## Bonus: BullMQ reminder job
-
-A background worker logs a daily reminder for every patient who has fewer than 4 readings today. It needs Redis (see [Docker](#bonus-docker)).
-
-Run the worker in its own terminal:
-
-```bash
-cd server
-npm run worker
-```
-
-- The job is scheduled every day at 20:00 server time (a repeatable BullMQ job).
-- It writes one log line per user, for example `Reminder: Demo User (demo@example.com) has 2 of 4 readings today.` Sending real emails or push messages is out of scope.
-- To test it right away without waiting for 20:00, run `npm run worker -- --now`.
-<!-- BONUS END: bullmq -->
 
 <!-- BONUS START: doctor -->
 ## Bonus: Doctor role

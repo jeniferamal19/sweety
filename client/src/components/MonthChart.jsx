@@ -44,8 +44,14 @@ export default function MonthChart({ date, refreshKey }) {
   }, [date, refreshKey]);
 
   return (
-    <div className="card">
-      <h3>Readings over the month</h3>
+    <div className="card chart-card" id="glucose-tracking">
+      <div className="card-heading">
+        <div>
+          <span className="eyebrow">GLUCOSE TRACKING</span>
+          <h3>Readings over the month</h3>
+        </div>
+        <span className="chart-unit">Values in mg/dl</span>
+      </div>
       {error && <div className="error">{error}</div>}
       {readings && readings.length === 0 && (
         <p className="empty">No readings for this month yet.</p>
