@@ -3,6 +3,7 @@ const db = require('./index');
 const { todayString } = require('../services/readingValidation');
 
 const DEMO = { name: 'Demo User', email: 'demo@example.com', password: 'password123' };
+const DOCTOR = { name: 'Dr. Demo', email: 'doctor@example.com', password: 'password123' };
 const SLOT_NAMES = ['morning', 'after_breakfast', 'after_lunch', 'after_dinner'];
 const DAYS = 45;
 
@@ -13,17 +14,26 @@ function daysAgo(today, n) {
   return date.toISOString().slice(0, 10);
 }
 
-async function seed() {
-  const hash = await bcrypt.hash(DEMO.password, 10);
-
-  // Create the demo user, or reset its password if it already exists
-  const userResult = await db.query(
-    `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)
-     ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash
+async function upsertUser({ name, email, password }, role) {
+  const hash = await bcrypt.hash(password, 10);
+  const result = await db.query(
+    `INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role
      RETURNING id`,
-    [DEMO.name, DEMO.email, hash]
+    [name, email, hash, role]
   );
-  const userId = userResult.rows[0].id;
+  return result.rows[0].id;
+}
+
+async function seed() {
+  const userId = await upsertUser(DEMO, 'patient');
+  const doctorId = await upsertUser(DOCTOR, 'doctor');
+
+  // The doctor's patient list
+  await db.query(
+    'INSERT INTO doctor_patients (doctor_id, patient_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+    [doctorId, userId]
+  );
 
   // Start fresh so running the seed twice never creates duplicates
   await db.query('DELETE FROM readings WHERE user_id = $1', [userId]);
@@ -47,6 +57,7 @@ async function seed() {
   }
 
   console.log(`Seeded ${DEMO.email} / ${DEMO.password} with ${count} readings.`);
+  console.log(`Seeded doctor ${DOCTOR.email} / ${DOCTOR.password} (assigned to ${DEMO.email}).`);
 }
 
 seed()

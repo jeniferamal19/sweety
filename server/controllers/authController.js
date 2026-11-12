@@ -7,7 +7,7 @@ function makeToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
-// POST /auth/register
+// POST /auth/register  (always creates a patient)
 async function register(req, res) {
   try {
     const error = validateRegistration(req.body);
@@ -24,7 +24,7 @@ async function register(req, res) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
+      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, role',
       [name.trim(), cleanEmail, passwordHash]
     );
 
@@ -45,7 +45,7 @@ async function login(req, res) {
     }
 
     const result = await pool.query(
-      'SELECT id, name, email, password_hash FROM users WHERE email = $1',
+      'SELECT id, name, email, role, password_hash FROM users WHERE email = $1',
       [email.trim().toLowerCase()]
     );
     const user = result.rows[0];
@@ -55,7 +55,7 @@ async function login(req, res) {
 
     res.json({
       token: makeToken(user.id),
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
     });
   } catch (err) {
     console.error(err);
@@ -66,7 +66,7 @@ async function login(req, res) {
 // GET /auth/me
 async function me(req, res) {
   try {
-    const result = await pool.query('SELECT id, name, email FROM users WHERE id = $1', [req.userId]);
+    const result = await pool.query('SELECT id, name, email, role FROM users WHERE id = $1', [req.userId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found.' });
     res.json({ user: result.rows[0] });
   } catch (err) {

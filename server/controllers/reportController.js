@@ -21,52 +21,64 @@ async function statsFor(userId, from, to) {
   };
 }
 
+// Returns an error message for a bad report date, or null
+function dateError(date) {
+  if (!isRealDate(date)) return 'Please choose a valid date.';
+  if (date > todayString()) return 'Date cannot be in the future.';
+  return null;
+}
+
+// The three reports for one user and one date
+async function buildReport(userId, date) {
+  const ranges = getRanges(date);
+
+  const [daily, monthToDate, previousMonth, dayReadings] = await Promise.all([
+    statsFor(userId, ranges.daily.from, ranges.daily.to),
+    statsFor(userId, ranges.monthToDate.from, ranges.monthToDate.to),
+    statsFor(userId, ranges.previousMonth.from, ranges.previousMonth.to),
+    pool.query(
+      `SELECT id, slot, value FROM readings
+       WHERE user_id = $1 AND reading_date = $2
+       ORDER BY CASE slot
+         WHEN 'morning' THEN 1 WHEN 'after_breakfast' THEN 2
+         WHEN 'after_lunch' THEN 3 ELSE 4 END`,
+      [userId, date]
+    ),
+  ]);
+
+  return {
+    date,
+    daily: {
+      ...ranges.daily,
+      ...daily,
+      readings: dayReadings.rows.map((r) => ({ ...r, slotLabel: SLOTS[r.slot] })),
+    },
+    monthToDate: { ...ranges.monthToDate, ...monthToDate },
+    previousMonth: { ...ranges.previousMonth, ...previousMonth },
+  };
+}
+
 // GET /reports?date=YYYY-MM-DD   (date defaults to today)
 async function getReports(req, res) {
   try {
     const date = req.query.date || todayString();
-    if (!isRealDate(date)) return res.status(400).json({ error: 'Please choose a valid date.' });
-    if (date > todayString()) return res.status(400).json({ error: 'Date cannot be in the future.' });
+    const error = dateError(date);
+    if (error) return res.status(400).json({ error });
 
-    const ranges = getRanges(date);
-    const userId = req.userId;
-
-    const [daily, monthToDate, previousMonth, dayReadings] = await Promise.all([
-      statsFor(userId, ranges.daily.from, ranges.daily.to),
-      statsFor(userId, ranges.monthToDate.from, ranges.monthToDate.to),
-      statsFor(userId, ranges.previousMonth.from, ranges.previousMonth.to),
-      pool.query(
-        `SELECT id, slot, value FROM readings
-         WHERE user_id = $1 AND reading_date = $2
-         ORDER BY CASE slot
-           WHEN 'morning' THEN 1 WHEN 'after_breakfast' THEN 2
-           WHEN 'after_lunch' THEN 3 ELSE 4 END`,
-        [userId, date]
-      ),
-    ]);
-
-    res.json({
-      date,
-      daily: {
-        ...ranges.daily,
-        ...daily,
-        readings: dayReadings.rows.map((r) => ({ ...r, slotLabel: SLOTS[r.slot] })),
-      },
-      monthToDate: { ...ranges.monthToDate, ...monthToDate },
-      previousMonth: { ...ranges.previousMonth, ...previousMonth },
-    });
+    res.json(await buildReport(req.userId, date));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 }
+
 // GET /reports/month?date=YYYY-MM-DD
 // Readings from the 1st of the month up to the date, for the chart
 async function getMonthReadings(req, res) {
   try {
     const date = req.query.date || todayString();
-    if (!isRealDate(date)) return res.status(400).json({ error: 'Please choose a valid date.' });
-    if (date > todayString()) return res.status(400).json({ error: 'Date cannot be in the future.' });
+    const error = dateError(date);
+    if (error) return res.status(400).json({ error });
 
     const { monthToDate } = getRanges(date);
     const result = await pool.query(
@@ -83,4 +95,4 @@ async function getMonthReadings(req, res) {
   }
 }
 
-module.exports = { getReports, getMonthReadings };
+module.exports = { getReports, getMonthReadings, buildReport, dateError };
